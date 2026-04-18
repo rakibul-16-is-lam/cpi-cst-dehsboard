@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-bento-bg: var(--bento-bg);
+  --color-bento-card: var(--bento-card);
+  --color-bento-primary: #2563eb;
+  --color-bento-text: var(--bento-text);
+  --color-bento-muted: var(--bento-muted);
+  --color-bento-accent: #10b981;
+  --color-bento-warning: #f59e0b;
+  --color-bento-danger: #ef4444;
+  --color-bento-border: var(--bento-border);
+}
+
+:root {
+  --bento-bg: #f4f7fa;
+  --bento-card: #ffffff;
+  --bento-text: #1e293b;
+  --bento-muted: #64748b;
+  --bento-border: #e2e8f0;
+}
+
+.dark {
+  --bento-bg: #0b0f1a;
+  --bento-card: #161b2a;
+  --bento-text: #f1f5f9;
+  --bento-muted: #64748b;
+  --bento-border: #1e293b;
+}
+
+@layer base {
+  body {
+    @apply bg-bento-bg text-bento-text antialiased;
+  }
+}
+
+@layer components {
+  .dashboard-card {
+    @apply bg-bento-card rounded-xl border border-bento-border shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all duration-300;
+  }
+  
+  .card-title {
+    @apply text-[12px] font-semibold uppercase tracking-wider text-bento-muted mb-4 flex justify-between items-center;
+  }
+
+  .stat-val {
+    @apply text-2xl font-bold text-bento-text;
+  }
+
+  .stat-label {
+    @apply text-[11px] text-bento-muted;
+  }
+
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300;
+  }
+}
+
