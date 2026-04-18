@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      // For this project, we'll consider anyone signed in as a department admin for demo purposes, 
+      // but in production, we should check a specific admin collection or custom claim.
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Notice Validation ---
+    function isValidNotice(data) {
+      return data.keys().hasAll(['text', 'type', 'createdAt', 'authorId']) &&
+             data.keys().size() == 4 &&
+             data.text is string && data.text.size() <= 1000 &&
+             data.type in ['info', 'warning'] &&
+             data.createdAt == request.time &&
+             data.authorId == request.auth.uid;
+    }
+
+    // --- Student Validation ---
+    function isValidStudent(data) {
+      return data.keys().hasAll(['id', 'name', 'score', 'avatar', 'updatedAt']) &&
+             data.keys().size() == 5 &&
+             data.id is string && data.id.size() <= 20 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.score is number && data.score >= 0 && data.score <= 4.0 &&
+             data.avatar is string && data.avatar.size() <= 5 &&
+             data.updatedAt == request.time;
+    }
+
+    // --- Collection Matches ---
+
+    match /notices/{noticeId} {
+      allow read: if true; // Public view
+      allow create: if isAdmin() && isValidNotice(incoming()) && isValidId(noticeId);
+      allow update: if isAdmin() && isValidNotice(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['text', 'type', 'createdAt']) &&
+                    isValidId(noticeId);
+      allow delete: if isAdmin();
+    }
+
+    match /leaderboard/{studentId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidStudent(incoming()) && isValidId(studentId);
+      allow delete: if isAdmin();
+    }
+
+    match /settings/stats {
+      allow read: if true;
+      allow write: if isAdmin() && 
+                   incoming().totalStudents is number &&
+                   incoming().activeStudents is number &&
+                   incoming().alumni is number &&
+                   incoming().placementRate is number;
+    }
+  }
+}

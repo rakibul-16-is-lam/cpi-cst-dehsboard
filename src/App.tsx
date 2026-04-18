@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, 
@@ -24,7 +24,15 @@ import {
   Linkedin,
   Facebook,
   Sun,
-  Moon
+  Moon,
+  Plus,
+  Trash2,
+  Save,
+  LogIn,
+  LogOut,
+  Settings,
+  X,
+  Edit2
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -53,6 +61,29 @@ import {
 } from 'recharts';
 import { DASHBOARD_DATA } from './constants';
 import { cn } from './lib/utils';
+import { 
+  auth, 
+  db, 
+  googleProvider, 
+  handleFirestoreError 
+} from './lib/firebase';
+import { 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged 
+} from 'firebase/auth';
+import { 
+  collection, 
+  query, 
+  orderBy, 
+  onSnapshot, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp, 
+  updateDoc,
+  setDoc
+} from 'firebase/firestore';
 
 // --- Sub-Components ---
 
@@ -215,10 +246,94 @@ const Candlestick = (props: any) => {
 };
 
 const Dashboard = () => {
-  const [lastUpdated] = React.useState('Oct 24, 2023 • 10:45 AM');
+  const [lastUpdated, setLastUpdated] = React.useState('Oct 24, 2023 • 10:45 AM');
   const [isDarkMode, setIsDarkMode] = React.useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [notices, setNotices] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(DASHBOARD_DATA.stats);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  
+  // Notice Form State
+  const [newNotice, setNewNotice] = useState({ text: '', type: 'info' });
+
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (u) => setUser(u));
+    
+    // Real-time Notices
+    const qNotices = query(collection(db, 'notices'), orderBy('createdAt', 'desc'));
+    const unsubNotices = onSnapshot(qNotices, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setNotices(data.length > 0 ? data : DASHBOARD_DATA.notices);
+    }, (err) => handleFirestoreError(err, 'list', 'notices'));
+
+    // Real-time Leaderboard
+    const qLeaderboard = query(collection(db, 'leaderboard'), orderBy('score', 'desc'));
+    const unsubLeaderboard = onSnapshot(qLeaderboard, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data() }));
+      setLeaderboard(data.length > 0 ? data : DASHBOARD_DATA.leaderboard);
+    }, (err) => handleFirestoreError(err, 'list', 'leaderboard'));
+
+    // Real-time Stats
+    const unsubStats = onSnapshot(doc(db, 'settings', 'stats'), (snapshot) => {
+      if (snapshot.exists()) {
+        setStats(snapshot.data());
+      }
+    });
+
+    return () => {
+      unsubAuth();
+      unsubNotices();
+      unsubLeaderboard();
+      unsubStats();
+    };
+  }, []);
+
+  const login = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const logout = () => signOut(auth);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
+  // CRUD Functions
+  const addNotice = async () => {
+    if (!newNotice.text || !user) return;
+    try {
+      await addDoc(collection(db, 'notices'), {
+        ...newNotice,
+        createdAt: serverTimestamp(),
+        authorId: user.uid
+      });
+      setNewNotice({ text: '', type: 'info' });
+    } catch (err) {
+      handleFirestoreError(err, 'create', 'notices');
+    }
+  };
+
+  const removeNotice = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'notices', id));
+    } catch (err) {
+      handleFirestoreError(err, 'delete', 'notices');
+    }
+  };
+
+  const updateStats = async (key: string, value: number) => {
+    try {
+      await setDoc(doc(db, 'settings', 'stats'), {
+        ...stats,
+        [key]: value
+      }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, 'write', 'settings/stats');
+    }
+  };
 
   return (
     <div className={cn(
@@ -252,19 +367,53 @@ const Dashboard = () => {
              </p>
           </div>
 
-          {/* Right Part - Controls & Time */}
-          <div className="flex items-center justify-end gap-3 lg:gap-6">
-             <button 
-               onClick={toggleTheme}
-               className="p-2 rounded-lg bg-bento-bg border border-bento-border text-bento-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
-               title={isDarkMode ? "Switch to Light Mode" : "Switch to Night Mode"}
-             >
-               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-             </button>
-             <div className="text-[10px] lg:text-[11px] text-bento-muted bg-bento-bg px-3 py-1.5 rounded border border-bento-border shadow-sm font-bold font-mono hover:text-bento-primary transition-colors cursor-wait">
-               {lastUpdated}
-             </div>
-          </div>
+           {/* Right Part - Controls & Time */}
+           <div className="flex items-center justify-end gap-3 lg:gap-6">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setIsAdminMode(!isAdminMode)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
+                      isAdminMode ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20" : "bg-bento-bg border border-bento-border text-bento-muted hover:border-bento-primary hover:text-bento-primary"
+                    )}
+                  >
+                    <Settings size={14} className={isAdminMode ? "animate-spin" : ""} />
+                    {isAdminMode ? "Exit Admin" : "Manage CMS"}
+                  </button>
+                  <button 
+                    onClick={logout}
+                    className="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all active:scale-95 shadow-sm"
+                    title="Logout"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                  <div className="hidden lg:flex flex-col items-end">
+                    <span className="text-[10px] font-black text-bento-text leading-none">{user.displayName}</span>
+                    <span className="text-[8px] font-bold text-bento-muted uppercase tracking-widest">Admin</span>
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  onClick={login}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bento-primary text-white font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all active:scale-95 shadow-md shadow-blue-500/20 group"
+                >
+                  <LogIn size={14} className="group-hover:translate-x-1 transition-transform" />
+                  Admin Portal
+                </button>
+              )}
+              
+              <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-bento-bg border border-bento-border text-bento-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
+                title={isDarkMode ? "Switch to Light Mode" : "Switch to Night Mode"}
+              >
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <div className="hidden sm:block text-[10px] lg:text-[11px] text-bento-muted bg-bento-bg px-3 py-1.5 rounded border border-bento-border shadow-sm font-bold font-mono hover:text-bento-primary transition-colors">
+                {lastUpdated}
+              </div>
+           </div>
         </div>
       </header>
 
@@ -276,10 +425,10 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 auto-rows-min gap-4">
             
             {/* Stats Row */}
-            <StatCard label="Total Students" value={DASHBOARD_DATA.stats.totalStudents} subtext="+12 / Sem" variant="blue" />
-            <StatCard label="Active Status" value={DASHBOARD_DATA.stats.activeStudents} subtext="95% Active" variant="emerald" />
-            <StatCard label="Alumni" value={DASHBOARD_DATA.stats.alumni} subtext="Verified" variant="amber" />
-            <StatCard label="Placements" value="84%" subtext="Target: 90%" variant="rose" />
+            <StatCard label="Total Students" value={stats.totalStudents} subtext="+12 / Sem" variant="blue" />
+            <StatCard label="Active Status" value={stats.activeStudents} subtext="95% Active" variant="emerald" />
+            <StatCard label="Alumni" value={stats.alumni} subtext="Verified" variant="amber" />
+            <StatCard label="Placements" value={stats.placementRate + "%"} subtext="Target: 90%" variant="rose" />
 
             {/* Main Graphs */}
             <BentoCard title="STUDENT DISTRIBUTION" extra="Year View" className="md:col-span-2" accent="violet">
@@ -389,7 +538,7 @@ const Dashboard = () => {
 
           <BentoCard title="Student Leaderboard" className="2xl:col-span-1" accent="indigo">
              <div className="space-y-1">
-                {DASHBOARD_DATA.leaderboard.map((student, i) => (
+                {(leaderboard.length > 0 ? leaderboard : DASHBOARD_DATA.leaderboard).map((student, i) => (
                   <LeaderboardRow key={i} student={student} index={i} />
                 ))}
              </div>
@@ -443,12 +592,20 @@ const Dashboard = () => {
                 whileHover={{ animationPlayState: 'paused' }}
                 className="space-y-4 px-1"
               >
-              {/* Triple the data to ensure seamless infinite looping */}
-              {[...DASHBOARD_DATA.notices, ...DASHBOARD_DATA.notices, ...DASHBOARD_DATA.notices].map((n, i) => (
+              {/* Notice Data Feed */}
+              {notices.map((n, i) => (
                 <div key={i} className={cn(
-                  "p-4 border rounded-2xl bg-bento-bg shadow-sm transition-all hover:scale-[1.02] cursor-pointer group/item",
+                  "p-4 border rounded-2xl bg-bento-bg shadow-sm transition-all hover:scale-[1.02] cursor-pointer group/item relative",
                   n.type === 'warning' ? "border-rose-500/20 hover:border-rose-500" : "border-blue-500/20 hover:border-blue-500"
                 )}>
+                  {isAdminMode && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); removeNotice(n.id); }}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover/item:opacity-100 transition-opacity z-30"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                  )}
                   <div className="flex items-center justify-between mb-2">
                     <div className={cn(
                       "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded font-mono transition-all group-hover/item:tracking-[0.15em]",
@@ -456,10 +613,12 @@ const Dashboard = () => {
                     )}>
                       {n.type}
                     </div>
-                    <div className="text-[9px] text-bento-muted font-bold font-mono group-hover/item:text-bento-primary transition-colors">2H AGO</div>
+                    <div className="text-[9px] text-bento-muted font-bold font-mono group-hover/item:text-bento-primary transition-colors">
+                      {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'JUST NOW'}
+                    </div>
                   </div>
                   <div className={cn(
-                    "text-[13px] font-bold leading-snug transition-colors",
+                    "text-[13px] font-bold leading-snug transition-colors pr-6",
                     n.type === 'warning' ? "text-rose-900 dark:text-rose-100 group-hover/item:text-rose-500" : "text-bento-text group-hover/item:text-blue-500"
                   )}>{n.text}</div>
                 </div>
@@ -471,7 +630,78 @@ const Dashboard = () => {
               <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-bento-card via-bento-card/80 to-transparent pointer-events-none z-10" />
             </div>
             
-            {/* Interactive Footer */}
+            {/* Admin Notice Input */}
+            {isAdminMode && (
+              <div className="mt-4 p-4 border border-bento-border rounded-2xl bg-white/5 space-y-3 z-30 relative">
+                 <div className="flex items-center gap-2">
+                   <Plus size={14} className="text-bento-primary" />
+                   <span className="text-[10px] font-black uppercase tracking-widest text-bento-text">Post New Notice</span>
+                 </div>
+                 <textarea 
+                   value={newNotice.text}
+                   onChange={(e) => setNewNotice({...newNotice, text: e.target.value})}
+                   placeholder="Type departmental announcement..."
+                   className="w-full h-20 bg-bento-bg border border-bento-border rounded-xl p-3 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                 />
+                 <div className="flex gap-2">
+                   <select 
+                     value={newNotice.type}
+                     onChange={(e) => setNewNotice({...newNotice, type: e.target.value})}
+                     className="flex-1 bg-bento-bg border border-bento-border rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none"
+                   >
+                     <option value="info">INFO (BLUE)</option>
+                     <option value="warning">WARNING (RED)</option>
+                   </select>
+                   <button 
+                     onClick={addNotice}
+                     className="bg-bento-primary text-white font-black text-[10px] px-4 py-1.5 rounded-lg hover:bg-blue-600 active:scale-95 transition-all"
+                   >
+                     SEND FEED
+                   </button>
+                 </div>
+              </div>
+            )}
+            
+             {/* Admin Stats Management */}
+             {isAdminMode && (
+               <div className="mt-4 p-4 border border-bento-border rounded-2xl bg-white/5 space-y-4 z-30 relative">
+                  <div className="flex items-center gap-2">
+                    <Settings size={14} className="text-amber-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-bento-text">Update System Stats</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-bento-muted uppercase">Students</label>
+                      <input 
+                        type="number" 
+                        value={stats.totalStudents} 
+                        onChange={(e) => updateStats('totalStudents', parseInt(e.target.value))}
+                        className="w-full bg-bento-bg border border-bento-border rounded-lg px-2 py-1 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[8px] font-bold text-bento-muted uppercase">Alumni</label>
+                      <input 
+                        type="number" 
+                        value={stats.alumni} 
+                        onChange={(e) => updateStats('alumni', parseInt(e.target.value))}
+                        className="w-full bg-bento-bg border border-bento-border rounded-lg px-2 py-1 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1 col-span-2">
+                      <label className="text-[8px] font-bold text-bento-muted uppercase">Placement Rate (%)</label>
+                      <input 
+                        type="number" 
+                        value={stats.placementRate} 
+                        onChange={(e) => updateStats('placementRate', parseInt(e.target.value))}
+                        className="w-full bg-bento-bg border border-bento-border rounded-lg px-2 py-1 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+               </div>
+             )}
+             
+             {/* Interactive Footer */}
             <div className="mt-2 pt-2 border-t border-bento-border">
               <button className="w-full text-[10px] font-black text-bento-muted flex items-center justify-center gap-2 py-1 hover:text-bento-primary transition-colors">
                  PAUSE ON HOVER TO READ <TrendingUp size={10} />
@@ -482,12 +712,18 @@ const Dashboard = () => {
           <BentoCard title="Quick Contact" className="h-[160px] flex-shrink-0" accent="blue">
              <div className="space-y-3">
                 <div className="flex items-center gap-3 group/person">
-                   <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold text-xs shadow-inner group-hover/person:bg-blue-500 group-hover/person:text-white transition-all">HK</div>
-                   <div className="leading-none"><b className="text-xs block text-bento-text group-hover:text-blue-500 transition-colors">Prof. Kamal</b><span className="text-[10px] text-bento-muted">cst@cpi.ac.bd</span></div>
+                   <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold text-xs shadow-inner group-hover/person:bg-blue-500 group-hover/person:text-white transition-all">HOD</div>
+                   <div className="leading-none">
+                     <b className="text-xs block text-bento-text group-hover:text-blue-500 transition-colors">Head of Dept.</b>
+                     <span className="text-[10px] text-bento-muted font-mono">+880 1817-548148</span>
+                   </div>
                 </div>
                 <div className="flex items-center gap-3 group/person">
-                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs shadow-inner group-hover/person:bg-emerald-500 group-hover/person:text-white transition-all">TK</div>
-                   <div className="leading-none"><b className="text-xs block text-bento-text group-hover:text-emerald-500 transition-colors">Prof. Kabir</b><span className="text-[10px] text-bento-muted">Lab Instr.</span></div>
+                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs shadow-inner group-hover/person:bg-emerald-500 group-hover/person:text-white transition-all">CI</div>
+                   <div className="leading-none">
+                     <b className="text-xs block text-bento-text group-hover:text-emerald-500 transition-colors">Mehadi Hassan</b>
+                     <span className="text-[10px] text-bento-muted uppercase">Chief Instructor</span>
+                   </div>
                 </div>
              </div>
           </BentoCard>
