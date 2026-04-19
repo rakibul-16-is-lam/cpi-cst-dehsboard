@@ -84,6 +84,7 @@ import {
   updateDoc,
   setDoc
 } from 'firebase/firestore';
+import RegionalMap from './components/RegionalMap';
 
 // --- Sub-Components ---
 
@@ -92,7 +93,7 @@ const BentoCard = ({ title, children, className, extra, accent }: any) => (
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     className={cn(
-      "dashboard-card p-4 flex flex-col group relative overflow-hidden transition-all duration-300", 
+      "dashboard-card p-3 flex flex-col group relative overflow-hidden transition-all duration-300", 
       accent === 'blue' && "bg-blue-500/[0.03] dark:bg-blue-500/[0.05] border-blue-500/20",
       accent === 'emerald' && "bg-emerald-500/[0.03] dark:bg-emerald-500/[0.05] border-emerald-500/20",
       accent === 'amber' && "bg-amber-500/[0.03] dark:bg-amber-500/[0.05] border-amber-500/20",
@@ -253,9 +254,17 @@ const Dashboard = () => {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(DASHBOARD_DATA.stats);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'success'} | null>(null);
   
   // Notice Form State
   const [newNotice, setNewNotice] = useState({ text: '', type: 'info' });
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (u) => setUser(u));
@@ -292,12 +301,18 @@ const Dashboard = () => {
   const login = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
+      setNotification({ message: 'Login successful!', type: 'success' });
     } catch (err) {
       console.error(err);
+      setNotification({ message: 'Login failed. Please try again.', type: 'error' });
     }
   };
 
-  const logout = () => signOut(auth);
+  const logout = () => {
+    signOut(auth);
+    setIsAdminMode(false);
+    setNotification({ message: 'Logged out.', type: 'success' });
+  };
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
@@ -311,16 +326,30 @@ const Dashboard = () => {
         authorId: user.uid
       });
       setNewNotice({ text: '', type: 'info' });
-    } catch (err) {
-      handleFirestoreError(err, 'create', 'notices');
+      setNotification({ message: 'Notice posted successfully!', type: 'success' });
+    } catch (err: any) {
+      try {
+        handleFirestoreError(err, 'create', 'notices');
+      } catch (e: any) {
+        const info = JSON.parse(e.message);
+        const msg = !info.authInfo.emailVerified 
+          ? 'Error: Your email must be verified to post notices.' 
+          : 'Permission denied: Admin access required.';
+        setNotification({ message: msg, type: 'error' });
+      }
     }
   };
 
   const removeNotice = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'notices', id));
-    } catch (err) {
-      handleFirestoreError(err, 'delete', 'notices');
+      setNotification({ message: 'Notice removed.', type: 'success' });
+    } catch (err: any) {
+      try {
+        handleFirestoreError(err, 'delete', 'notices');
+      } catch (e: any) {
+        setNotification({ message: 'Error: Permission denied.', type: 'error' });
+      }
     }
   };
 
@@ -330,8 +359,14 @@ const Dashboard = () => {
         ...stats,
         [key]: value
       }, { merge: true });
-    } catch (err) {
-      handleFirestoreError(err, 'write', 'settings/stats');
+      // We don't notify for every single input change to avoid noise, 
+      // but maybe on blur or just let it be silent success
+    } catch (err: any) {
+      try {
+        handleFirestoreError(err, 'write', 'settings/stats');
+      } catch (e: any) {
+        setNotification({ message: 'Error: Email verification or Admin access required.', type: 'error' });
+      }
     }
   };
 
@@ -341,8 +376,30 @@ const Dashboard = () => {
       isDarkMode && "dark"
     )}>
       {/* Header Section */}
-      <header className="h-[65px] bg-bento-card border-b border-bento-border flex-shrink-0 z-50">
-        <div className="max-w-[1900px] mx-auto px-6 h-full grid grid-cols-1 md:grid-cols-3 items-center">
+      <header className="h-[75px] bg-bento-card/80 backdrop-blur-xl border-b border-bento-border flex-shrink-0 z-50 sticky top-0">
+        {/* Top Accent Line */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-bento-primary to-transparent opacity-50" />
+        
+        <AnimatePresence>
+          {notification && (
+            <motion.div 
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className={cn(
+                "fixed top-4 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-[100] font-black text-[12px] uppercase tracking-widest flex items-center gap-3",
+                notification.type === 'error' ? "bg-rose-500 text-white" : "bg-emerald-500 text-white"
+              )}
+            >
+              {notification.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
+              {notification.message}
+              <button onClick={() => setNotification(null)} className="ml-2 hover:scale-110 transition-transform"><X size={14} /></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className="max-w-[1920px] mx-auto px-8 h-full grid grid-cols-1 md:grid-cols-3 items-center relative gap-4">
+          {/* Subtle shine effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full animate-[shimmer_5s_infinite] pointer-events-none" />
           {/* Left Part - Status Indicators */}
           <div className="hidden md:flex items-center gap-4">
              <div className="flex flex-col gap-1 text-[9px] font-bold text-slate-400 font-mono">
@@ -358,71 +415,90 @@ const Dashboard = () => {
           </div>
 
           {/* Center Part - Title */}
-          <div className="flex flex-col items-center justify-center text-center py-2 md:py-0">
-             <h1 className="text-[14px] lg:text-[18px] font-black text-bento-primary uppercase tracking-tight leading-none mb-1 hover:tracking-wide transition-all duration-500 cursor-default">
-               CHATTOGRAM POLYTECHNIC INSTITUTE | CST OPERATIONS DASHBOARD
-             </h1>
-             <p className="text-[9px] lg:text-[11px] text-bento-muted font-bold uppercase tracking-[0.3em] hover:tracking-[0.4em] transition-all duration-700 cursor-default">
-               Department Monitoring View
+          <div className="flex flex-col items-center justify-center text-center py-2 md:py-0 relative">
+             <div className="flex items-center gap-3 mb-1">
+               <div className="h-[1px] w-6 bg-bento-primary/30 hidden lg:block" />
+               <h1 className="text-[14px] lg:text-[16px] xl:text-[20px] font-black text-bento-primary uppercase tracking-normal leading-none hover:tracking-wider transition-all duration-700 cursor-default flex items-center gap-2">
+                 <span className="opacity-70 font-medium">Chattogram Polytechnic</span>
+                 <span className="text-bento-text/20">|</span>
+                 <span>CPI DASHBOARD</span>
+               </h1>
+               <div className="h-[1px] w-6 bg-bento-primary/30 hidden lg:block" />
+             </div>
+             <p className="text-[8px] lg:text-[10px] text-bento-muted font-black uppercase tracking-[0.4em] hover:tracking-[0.6em] transition-all duration-1000 cursor-default opacity-60">
+               Engineering & Technology Portal
              </p>
           </div>
 
            {/* Right Part - Controls & Time */}
-           <div className="flex items-center justify-end gap-3 lg:gap-6">
+           <div className="flex items-center justify-end gap-3 lg:gap-4">
               {user ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-bento-bg/50 border border-bento-border p-1 rounded-2xl">
                   <button 
                     onClick={() => setIsAdminMode(!isAdminMode)}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-                      isAdminMode ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20" : "bg-bento-bg border border-bento-border text-bento-muted hover:border-bento-primary hover:text-bento-primary"
+                      "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300",
+                      isAdminMode 
+                        ? "bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] scale-105" 
+                        : "text-bento-muted hover:text-amber-500 hover:bg-amber-500/5"
                     )}
                   >
-                    <Settings size={14} className={isAdminMode ? "animate-spin" : ""} />
-                    {isAdminMode ? "Exit Admin" : "Manage CMS"}
+                    <Settings size={15} className={cn("transition-transform duration-700", isAdminMode && "animate-spin")} />
+                    <span className="hidden sm:inline">{isAdminMode ? "Exit Admin" : "Manage CMS"}</span>
                   </button>
-                  <button 
-                    onClick={logout}
-                    className="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all active:scale-95 shadow-sm"
-                    title="Logout"
-                  >
-                    <LogOut size={18} />
-                  </button>
-                  <div className="hidden lg:flex flex-col items-end">
-                    <span className="text-[10px] font-black text-bento-text leading-none">{user.displayName}</span>
-                    <span className="text-[8px] font-bold text-bento-muted uppercase tracking-widest">Admin</span>
+                  
+                  <div className="h-6 w-[1px] bg-bento-border mx-1" />
+
+                  <div className="flex items-center gap-3 pr-2">
+                    <div className="hidden lg:flex flex-col items-end leading-tight">
+                      <span className="text-[11px] font-black text-bento-text">{user.displayName}</span>
+                      <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest opacity-80">System Admin</span>
+                    </div>
+                    <button 
+                      onClick={logout}
+                      className="w-10 h-10 rounded-xl bg-rose-500 text-white hover:bg-rose-600 hover:shadow-[0_0_15px_rgba(244,63,94,0.4)] transition-all active:scale-90 flex items-center justify-center group"
+                      title="Logout"
+                    >
+                      <LogOut size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                    </button>
                   </div>
                 </div>
               ) : (
                 <button 
                   onClick={login}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bento-primary text-white font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all active:scale-95 shadow-md shadow-blue-500/20 group"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-bento-primary text-white font-black text-[11px] uppercase tracking-widest hover:bg-blue-600 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all active:scale-95 group"
                 >
-                  <LogIn size={14} className="group-hover:translate-x-1 transition-transform" />
+                  <LogIn size={15} className="group-hover:translate-x-1 transition-transform" />
                   Admin Portal
                 </button>
               )}
               
-              <button 
-                onClick={toggleTheme}
-                className="p-2 rounded-lg bg-bento-bg border border-bento-border text-bento-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
-                title={isDarkMode ? "Switch to Light Mode" : "Switch to Night Mode"}
-              >
-                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <div className="hidden sm:block text-[10px] lg:text-[11px] text-bento-muted bg-bento-bg px-3 py-1.5 rounded border border-bento-border shadow-sm font-bold font-mono hover:text-bento-primary transition-colors">
-                {lastUpdated}
+              <div className="flex items-center gap-2 bg-bento-bg/50 border border-bento-border p-1 rounded-2xl">
+                <button 
+                  onClick={toggleTheme}
+                  className="w-10 h-10 rounded-xl text-bento-text hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-90 flex items-center justify-center shadow-sm group"
+                  title={isDarkMode ? "Switch to Light Mode" : "Switch to Night Mode"}
+                >
+                  {isDarkMode 
+                    ? <Sun size={20} className="group-hover:rotate-90 transition-transform duration-500 text-amber-400" /> 
+                    : <Moon size={20} className="group-hover:-rotate-12 transition-transform duration-500 text-blue-500" />
+                  }
+                </button>
+                <div className="hidden xl:flex flex-col justify-center px-3 border-l border-bento-border">
+                  <span className="text-[8px] font-black text-bento-muted uppercase tracking-widest leading-none mb-1">Last Update</span>
+                  <span className="text-[10px] font-bold text-bento-primary font-mono leading-none">{lastUpdated}</span>
+                </div>
               </div>
            </div>
         </div>
       </header>
 
       {/* Main Container - Fit to Screen */}
-      <main className="flex-grow max-w-[1900px] mx-auto w-full px-4 lg:px-6 py-4 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4 overflow-hidden">
+      <main className="flex-grow max-w-[1900px] mx-auto w-full px-3 lg:px-4 py-3 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-3 overflow-hidden">
         
         {/* Left Column: Grid Content - Scrollable if needed, but ideally fits */}
         <div className="h-full overflow-y-auto pr-1 custom-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 auto-rows-min gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 auto-rows-min gap-3">
             
             {/* Stats Row */}
             <StatCard label="Total Students" value={stats.totalStudents} subtext="+12 / Sem" variant="blue" />
@@ -544,7 +620,7 @@ const Dashboard = () => {
              </div>
           </BentoCard>
 
-          <BentoCard title="PROFICIENCY INDEX" className="md:col-span-2" accent="blue">
+          <BentoCard title="PROFICIENCY INDEX" className="2xl:col-span-1" accent="blue">
             <div className="h-[280px] mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={DASHBOARD_DATA.skillsRadar}>
@@ -562,6 +638,12 @@ const Dashboard = () => {
               </ResponsiveContainer>
             </div>
           </BentoCard>
+
+          <BentoCard title="REGIONAL CONTEXT" className="2xl:col-span-1 p-2" accent="emerald">
+             <div className="h-[280px] w-full">
+                <RegionalMap />
+             </div>
+          </BentoCard>
           </div>
         </div>
 
@@ -569,65 +651,95 @@ const Dashboard = () => {
         <aside className="h-full flex flex-col gap-4 overflow-hidden">
           <BentoCard 
             title={
-              <div className="flex items-center justify-between w-full">
-                <span className="text-xs uppercase tracking-tighter font-black">Live Notice Board</span>
+              <div className="flex items-center justify-between w-full h-[30px]">
                 <div className="flex items-center gap-2">
-                   <span className="text-[9px] font-bold text-red-500 animate-pulse">LIVE FEED</span>
-                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-[ping_2s_infinite]" />
+                   <span className="text-[13px] uppercase tracking-wider font-black text-bento-text group-hover:text-red-500 transition-colors duration-500">Live Notice Board</span>
+                </div>
+                <div className="flex items-center gap-2 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]">
+                   <span className="text-[9px] font-black text-red-500 tracking-widest uppercase">LIVE FEED</span>
+                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                 </div>
               </div>
             }
-            className="flex-1 flex flex-col overflow-hidden border-t-2 border-red-500 group"
+            className="flex-1 flex flex-col overflow-hidden border-t-2 border-red-500/50 group hover:border-red-500 transition-colors duration-500 shadow-xl"
           >
-            <div className="flex-1 overflow-hidden relative py-2">
+            <div className="flex-1 overflow-hidden relative py-3 px-1">
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-500/30 to-transparent z-20" />
+              
               <motion.div 
                 animate={{ 
-                  y: [0, -1000] 
+                  y: [0, -1200] 
                 }}
                 transition={{ 
-                  duration: 40, 
+                  duration: 45, 
                   repeat: Infinity, 
                   ease: "linear" 
                 }}
                 whileHover={{ animationPlayState: 'paused' }}
-                className="space-y-4 px-1"
+                className="space-y-5"
               >
               {/* Notice Data Feed */}
               {notices.map((n, i) => (
                 <div key={i} className={cn(
-                  "p-4 border rounded-2xl bg-bento-bg shadow-sm transition-all hover:scale-[1.02] cursor-pointer group/item relative",
-                  n.type === 'warning' ? "border-rose-500/20 hover:border-rose-500" : "border-blue-500/20 hover:border-blue-500"
+                  "p-4 border rounded-2xl bg-bento-bg/40 backdrop-blur-sm shadow-md transition-all hover:scale-[1.03] hover:shadow-lg cursor-pointer group/item relative overflow-hidden",
+                  n.type === 'warning' ? "border-rose-500/30 hover:border-rose-500" : "border-blue-500/30 hover:border-blue-500"
                 )}>
+                  {/* Item Shine Effect */}
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-white/10 group-hover/item:bg-white/20 transition-colors" />
+                  
                   {isAdminMode && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); removeNotice(n.id); }}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover/item:opacity-100 transition-opacity z-30"
+                      className="absolute top-3 right-3 p-1.5 bg-rose-500 text-white rounded-xl opacity-0 group-hover/item:opacity-100 transition-all hover:bg-rose-600 shadow-lg z-30"
                     >
-                      <Trash2 size={10} />
+                      <Trash2 size={12} />
                     </button>
                   )}
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <div className={cn(
-                      "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded font-mono transition-all group-hover/item:tracking-[0.15em]",
-                      n.type === 'warning' ? "bg-rose-500/10 text-rose-500" : "bg-sky-500/10 text-sky-500"
+                      "text-[10px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-lg transition-all group-hover/item:bg-white/10",
+                      n.type === 'warning' ? "bg-rose-500/20 text-rose-500" : "bg-blue-500/20 text-blue-500"
                     )}>
                       {n.type}
                     </div>
-                    <div className="text-[9px] text-bento-muted font-bold font-mono group-hover/item:text-bento-primary transition-colors">
+                    <div className="text-[10px] text-bento-muted font-black font-mono group-hover/item:text-bento-primary transition-colors flex items-center gap-1.5">
+                      <Calendar size={10} />
                       {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'JUST NOW'}
                     </div>
                   </div>
                   <div className={cn(
-                    "text-[13px] font-bold leading-snug transition-colors pr-6",
-                    n.type === 'warning' ? "text-rose-900 dark:text-rose-100 group-hover/item:text-rose-500" : "text-bento-text group-hover/item:text-blue-500"
+                    "text-[14px] font-black leading-tight transition-colors pr-6",
+                    n.type === 'warning' ? "text-rose-900 dark:text-rose-100 group-hover/item:text-rose-600" : "text-bento-text group-hover/item:text-blue-500"
                   )}>{n.text}</div>
+                  
+                  {/* Decorative corner accent */}
+                  <div className={cn(
+                    "absolute bottom-0 right-0 w-8 h-8 opacity-10",
+                    n.type === 'warning' ? "bg-rose-500" : "bg-blue-500",
+                    "rounded-tl-full"
+                  )} />
+                </div>
+              ))}
+              {/* Duplicate notices for infinite scroll feel if list is short */}
+              {notices.length < 10 && notices.map((n, i) => (
+                <div key={`d-${i}`} className={cn(
+                  "p-4 border rounded-2xl bg-bento-bg/40 backdrop-blur-sm shadow-md transition-all opacity-50 blur-[0.5px]",
+                  n.type === 'warning' ? "border-rose-500/30" : "border-blue-500/30"
+                )}>
+                   <div className="flex items-center justify-between mb-3 opacity-50">
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-lg bg-slate-500/10 text-slate-500">
+                      PAST FEED
+                    </div>
+                  </div>
+                  <div className="text-[14px] font-black leading-tight text-slate-300 line-clamp-1">{n.text}</div>
                 </div>
               ))}
               </motion.div>
               
-              {/* Premium Top & Bottom Fade Masks */}
-              <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-bento-card via-bento-card/80 to-transparent pointer-events-none z-10" />
-              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-bento-card via-bento-card/80 to-transparent pointer-events-none z-10" />
+              {/* Premium Top & Bottom Fade Masks - Enhanced */}
+              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-bento-card via-bento-card/90 to-transparent pointer-events-none z-10" />
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-bento-card via-bento-card/90 to-transparent pointer-events-none z-10" />
             </div>
             
             {/* Admin Notice Input */}
