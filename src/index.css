@@ -35,7 +35,10 @@
 
 @layer base {
   body {
-    @apply bg-bento-bg text-bento-text antialiased;
+    @apply bg-bento-bg text-bento-text antialiased text-lg;
+  }
+  html {
+    font-size: 115%;
   }
 }
 
@@ -45,15 +48,15 @@
   }
   
   .card-title {
-    @apply text-[12px] font-semibold uppercase tracking-wider text-bento-muted mb-4 flex justify-between items-center;
+    @apply text-[18px] font-semibold uppercase tracking-wider text-bento-muted mb-4 flex justify-between items-center;
   }
 
   .stat-val {
-    @apply text-2xl font-bold text-bento-text;
+    @apply text-4xl font-bold text-bento-text;
   }
 
   .stat-label {
-    @apply text-[11px] text-bento-muted;
+    @apply text-[16px] text-bento-muted;
   }
 
   /* Custom Scrollbar */

@@ -42,13 +42,6 @@ export const DASHBOARD_DATA = {
     { name: '2023', count: 70 },
     { name: '2024', count: 45 },
   ],
-  skillsRadar: [
-    { subject: 'Coding', A: 120, fullMark: 150 },
-    { subject: 'Math', A: 98, fullMark: 150 },
-    { subject: 'IoT', A: 86, fullMark: 150 },
-    { subject: 'Robotics', A: 99, fullMark: 150 },
-    { subject: 'AI', A: 85, fullMark: 150 },
-  ],
   studentDistribution: [
     { name: '1st Year', value: 80, color: '#3b82f6' },
     { name: '2nd Year', value: 70, color: '#10b981' },
@@ -56,15 +49,30 @@ export const DASHBOARD_DATA = {
     { name: '4th Year', value: 80, color: '#8b5cf6' },
   ],
   leaderboard: [
-    { rank: 1, name: 'Sadia Islam', score: 3.98, id: 'CST-502', avatar: 'SI' },
-    { rank: 2, name: 'Ali Hossain', score: 3.92, id: 'CST-505', avatar: 'AH' },
-    { rank: 3, name: 'Nusrat Jahan', score: 3.88, id: 'CST-512', avatar: 'NJ' },
-    { rank: 4, name: 'Tanvir Ahmed', score: 3.82, id: 'CST-520', avatar: 'TA' },
-    { rank: 5, name: 'Fahim Faisal', score: 3.75, id: 'CST-525', avatar: 'FF' },
+    { rank: 1, name: 'Sadia Islam', score: 3.98, id: 'CST-502', avatar: 'SI', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' },
+    { rank: 2, name: 'Ali Hossain', score: 3.92, id: 'CST-505', avatar: 'AH', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150' },
+    { rank: 3, name: 'Nusrat Jahan', score: 3.88, id: 'CST-512', avatar: 'NJ', photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150' },
+    { rank: 4, name: 'Tanvir Ahmed', score: 3.82, id: 'CST-520', avatar: 'TA', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150' },
+    { rank: 5, name: 'Fahim Faisal', score: 3.75, id: 'CST-525', avatar: 'FF', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150' },
   ],
   faculty: {
     head: 'Prof. Kamal Uddin',
     email: 'cst@cpi.ac.bd',
+    mobile: '+880 1712-345678',
     office: 'Room 203',
-  }
+  },
+  placements: [
+    { name: 'Ariful Islam', company: 'Google', position: 'Software Engineer', year: '2022' },
+    { name: 'Mousumi Akter', company: 'Brain Station 23', position: 'Web Developer', year: '2021' },
+    { name: 'Rayan Ahmed', company: 'Therap BD', position: 'Product Designer', year: '2023' },
+    { name: 'Jannatul Ferdous', company: 'Dynamic Solution', position: 'QA Engineer', year: '2022' },
+    { name: 'Shuvo Hasan', company: 'Tiger IT', position: 'Backend dev', year: '2021' },
+  ],
+  jobSeekers: [
+    { name: 'Emon Khan', skills: 'React, Node.js, Firebase', github: 'emon-git' },
+    { name: 'Sara Tabassum', skills: 'UI/UX, Figma, Tailwind', github: 'sara-design' },
+    { name: 'Imtiaz Ahmed', skills: 'Python, Django, PostgreSQL', github: 'imtiaz-dev' },
+    { name: 'Nafisa Sultana', skills: 'Machine Learning, AI, Python', github: 'nafisa-ai' },
+    { name: 'Kazi Mahbub', skills: 'App Dev, Flutter, Dart', github: 'kazi-flutter' },
+  ]
 };
