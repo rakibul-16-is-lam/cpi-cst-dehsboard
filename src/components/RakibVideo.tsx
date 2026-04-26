@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw, Upload } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface RakibVideoProps {
@@ -9,13 +9,19 @@ interface RakibVideoProps {
 }
 
 const RakibVideo: React.FC<RakibVideoProps> = ({ 
-  src = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  src: defaultSrc = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
   className 
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [videoSrc, setVideoSrc] = useState(defaultSrc);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    setVideoSrc(defaultSrc);
+  }, [defaultSrc]);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -51,15 +57,40 @@ const RakibVideo: React.FC<RakibVideoProps> = ({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setVideoSrc(url);
+      setIsPlaying(false);
+      // Revoke the old object URL if it exists to avoid memory leaks
+      if (videoSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(videoSrc);
+      }
+    }
+  };
+
+  const triggerUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className={cn("relative group overflow-hidden rounded-2xl bg-black aspect-[21/9] shadow-2xl", className)}>
       <video
         ref={videoRef}
-        src={src}
+        src={videoSrc}
         className="w-full h-full object-cover"
         onTimeUpdate={handleTimeUpdate}
         onClick={togglePlay}
         loop
+      />
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="video/*"
       />
       
       {/* Custom Controls Overlay */}
@@ -91,10 +122,16 @@ const RakibVideo: React.FC<RakibVideoProps> = ({
             >
               <RotateCcw size={18} />
             </button>
+            <button 
+              onClick={triggerUpload}
+              className="text-white hover:text-rose-500 transition-colors flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-black uppercase ring-1 ring-white/20"
+            >
+              <Upload size={16} /> Update Feed
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono text-white/70 uppercase tracking-widest font-black">4K UHD PLAYBACK</span>
+            <span className="text-[10px] font-mono text-white/70 uppercase tracking-widest font-black">PLAYBACK ENGINE</span>
             <button className="text-white hover:text-bento-primary transition-colors p-1">
               <Maximize size={18} />
             </button>
@@ -116,9 +153,9 @@ const RakibVideo: React.FC<RakibVideoProps> = ({
       )}
 
       {/* Metadata Badge */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full">
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full group/badge cursor-pointer" onClick={triggerUpload}>
         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-[9px] font-black text-white uppercase tracking-widest">Multimedia Feed</span>
+        <span className="text-[9px] font-black text-white uppercase tracking-widest group-hover/badge:text-rose-400 transition-colors">Multimedia Feed</span>
       </div>
     </div>
   );

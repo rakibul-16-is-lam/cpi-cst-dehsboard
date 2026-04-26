@@ -67,6 +67,13 @@ export const DASHBOARD_DATA = {
     { name: 'Rayan Ahmed', company: 'Therap BD', position: 'Product Designer', year: '2023' },
     { name: 'Jannatul Ferdous', company: 'Dynamic Solution', position: 'QA Engineer', year: '2022' },
     { name: 'Shuvo Hasan', company: 'Tiger IT', position: 'Backend dev', year: '2021' },
+    { name: 'Kamal Pasha', company: 'Samsung R&D', position: 'Senior Dev', year: '2020' },
+    { name: 'Nila Sultana', company: 'Grameenphone', position: 'Network Eng.', year: '2022' },
+    { name: 'Zayed Khan', company: 'Pathao', position: 'System Admin', year: '2023' },
+    { name: 'Tahmina Akter', company: 'Enosis Solutions', position: 'Software Engineer', year: '2023' },
+    { name: 'Faisal Mahmud', company: 'Kona Software', position: 'Frontend Dev', year: '2022' },
+    { name: 'Lopa Rahman', company: 'DataSoft', position: 'Junior dev', year: '2024' },
+    { name: 'Sajid Islam', company: 'Robi Axiata', position: 'System Eng.', year: '2021' },
   ],
   jobSeekers: [
     { name: 'Emon Khan', skills: 'React, Node.js, Firebase', github: 'emon-git' },
@@ -74,5 +81,7 @@ export const DASHBOARD_DATA = {
     { name: 'Imtiaz Ahmed', skills: 'Python, Django, PostgreSQL', github: 'imtiaz-dev' },
     { name: 'Nafisa Sultana', skills: 'Machine Learning, AI, Python', github: 'nafisa-ai' },
     { name: 'Kazi Mahbub', skills: 'App Dev, Flutter, Dart', github: 'kazi-flutter' },
+    { name: 'Rimi Akter', skills: 'Java, Spring, MySQL', github: 'rimi-dev' },
+    { name: 'Tanvir Hasan', skills: 'C++, Embedded, IoT', github: 'tanvir-iot' },
   ]
 };

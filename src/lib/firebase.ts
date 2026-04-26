@@ -60,10 +60,17 @@ export const handleFirestoreError = (error: any, operationType: FirestoreErrorIn
 // Test connection
 async function testConnection() {
   try {
+    // Try to get a document from the configured database
     await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log("Firebase connected successfully.");
   } catch (error: any) {
-    if(error.message?.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
+    if (error.message?.includes('the client is offline')) {
+      console.error("Firebase connection failed: The client is offline. This often means the Firebase project configuration is invalid or the project has been deleted.");
+      // Don't show the generic "Please check your Firebase configuration" if we want to be more specific
+    } else if (error.code === 'permission-denied') {
+       console.warn("Firebase connected, but permission was denied for the connection test. This is expected if 'test/connection' is not publicly readable.");
+    } else {
+      console.error("Firebase initialization error:", error.code, error.message);
     }
   }
 }
