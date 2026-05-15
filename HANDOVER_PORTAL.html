@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPI CST Dashboard - Developer Handover Docs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+            .page-break { page-break-before: always; }
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 p-8 md:p-16">
+    <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border border-slate-200">
+        
+        <!-- Header -->
+        <div class="bg-blue-600 p-12 text-white">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-4xl font-black uppercase tracking-tighter leading-none mb-2">Technical Handover</h1>
+                    <p class="text-blue-100 font-bold uppercase tracking-widest text-sm">CPI CST Dashboard v2.0</p>
+                </div>
+                <button onclick="window.print()" class="no-print bg-white/20 hover:bg-white/30 px-6 py-3 rounded-xl font-bold text-sm transition-all">
+                    Download as PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="p-12 space-y-12">
+            
+            <!-- Guide 1 -->
+            <section>
+                <h2 class="text-2xl font-black border-b-4 border-blue-600 pb-2 mb-6 uppercase tracking-tight">1. Developer Handover Guide</h2>
+                <div class="prose prose-slate max-w-none space-y-4">
+                    <p class="text-slate-600">This document outlines the technical stack and integration plan for moving the current project to a <strong>Django + React</strong> architecture.</p>
+                    
+                    <div class="grid grid-cols-2 gap-8 my-8">
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                            <h3 class="font-bold text-blue-600 uppercase text-xs mb-3">Current Stack</h3>
+                            <ul class="text-sm space-y-2 font-medium">
+                                <li>• React.js (Vite)</li>
+                                <li>• Tailwind CSS</li>
+                                <li>• Recharts / Framer Motion</li>
+                                <li>• Firebase (Real-time DB)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                            <h3 class="font-bold text-blue-600 uppercase text-xs mb-3">Target Stack</h3>
+                            <ul class="text-sm space-y-2 font-medium">
+                                <li>• Django + DRF</li>
+                                <li>• PostgreSQL</li>
+                                <li>• JWT Authentication</li>
+                                <li>• React Frontend (Preserved)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3 class="font-black text-lg uppercase mt-8">Transfer Steps</h3>
+                    <ol class="list-decimal pl-5 space-y-3 text-slate-700">
+                        <li><strong>Backend Rewrite:</strong> Move Firebase Logic to Django Models (Notice, Leaderboard, etc).</li>
+                        <li><strong>API Endpoints:</strong> Create REST endpoints using Django REST Framework.</li>
+                        <li><strong>Frontend Hookup:</strong> Replace Firebase SDK listeners with Axios/Fetch calls.</li>
+                        <li><strong>Auth Migration:</strong> Replace Google Popup auth with Django Token authentication.</li>
+                    </ol>
+                </div>
+            </section>
+
+            <div class="page-break"></div>
+
+            <!-- Guide 2 -->
+            <section class="mt-12">
+                <h2 class="text-2xl font-black border-b-4 border-amber-500 pb-2 mb-6 uppercase tracking-tight">2. Interview Guide (বাংলা)</h2>
+                <div class="space-y-6">
+                    <p class="text-slate-600 font-medium">নতুন ডেভেলপার নিয়োগের জন্য ইন্টারভিউ গাইড:</p>
+                    
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-800">১. প্রয়োজনীয় স্কিলস:</h3>
+                        <p class="text-sm bg-slate-50 p-4 rounded-xl border-l-4 border-blue-500 italic">
+                            React, Tailwind, Recharts, Framer Motion, Python Django, DRF, PostgreSQL.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-800">২. ইন্টারভিউ প্রশ্ন:</h3>
+                        <div class="grid gap-4">
+                            <div class="p-4 bg-white border border-slate-200 rounded-xl">
+                                <b class="block text-blue-600 text-xs uppercase mb-1">React Question</b>
+                                <p class="text-sm font-semibold">"Firebase ছাড়াও জ্যাঙ্গো ব্যবহার করে নোটিশ বোর্ড কীভাবে রিয়েল-টাইম করবেন?"</p>
+                            </div>
+                            <div class="p-4 bg-white border border-slate-200 rounded-xl">
+                                <b class="block text-blue-600 text-xs uppercase mb-1">Django Question</b>
+                                <p class="text-sm font-semibold">"Admin Only পারমিশন কীভাবে সেট করবেন যাতে সাধারণ ইউজার ডেটা এডিট করতে না পারে?"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 bg-amber-50 p-6 rounded-2xl border border-amber-100">
+                        <h3 class="font-black text-amber-700 uppercase text-xs mb-3">৩. প্র্যাকটিক্যাল চ্যালেঞ্জ (Task):</h3>
+                        <p class="text-sm text-amber-900 leading-relaxed">
+                            "আমাদের ড্যাশবোর্ডে স্টুডেন্ট ডিস্ট্রিবিউশন পাই চার্ট এর জন্য জ্যাঙ্গোতে একটি API তৈরি করুন এবং সেটি ফ্রন্টএন্ডে কানেক্ট করে দেখান।"
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-slate-900 p-8 text-center">
+            <p class="text-slate-500 text-[10px] font-mono uppercase tracking-[0.3em]">Generated by AI Coding Agent • 2026</p>
+        </div>
+    </div>
+
+    <!-- Print Tip -->
+    <div class="no-print mt-8 text-center text-slate-400 text-xs">
+        <p>Tip: Press <b>Cmd+P</b> (Mac) or <b>Ctrl+P</b> (Windows) to save this page as a professional PDF.</p>
+    </div>
+</body>
+</html>

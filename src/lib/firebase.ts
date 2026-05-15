@@ -1,77 +1,68 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup, Auth } from 'firebase/auth';
 import { 
   getFirestore, 
-  collection, 
   doc, 
-  onSnapshot, 
-  setDoc, 
-  addDoc, 
-  deleteDoc, 
+  getDocFromServer, 
+  collection, 
   query, 
   orderBy, 
+  onSnapshot,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
   serverTimestamp,
-  getDocFromServer
+  Timestamp,
+  Firestore
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Error handling helper as per instructions
-export interface FirestoreErrorInfo {
+// Error handler based on instructions
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
   error: string;
-  operationType: 'create' | 'update' | 'delete' | 'list' | 'get' | 'write';
+  operationType: OperationType;
   path: string | null;
   authInfo: {
-    userId: string;
-    email: string;
-    emailVerified: boolean;
-    isAnonymous: boolean;
-    providerInfo: { providerId: string; displayName: string; email: string; }[];
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
   }
 }
 
-export const handleFirestoreError = (error: any, operationType: FirestoreErrorInfo['operationType'], path: string | null = null) => {
-  if (error.code === 'permission-denied') {
-    const errorInfo: FirestoreErrorInfo = {
-      error: error.message,
-      operationType,
-      path,
-      authInfo: {
-        userId: auth.currentUser?.uid || 'unauthenticated',
-        email: auth.currentUser?.email || '',
-        emailVerified: auth.currentUser?.emailVerified || false,
-        isAnonymous: auth.currentUser?.isAnonymous || false,
-        providerInfo: auth.currentUser?.providerData.map(p => ({
-          providerId: p.providerId,
-          displayName: p.displayName || '',
-          email: p.email || '',
-        })) || []
-      }
-    };
-    throw new Error(JSON.stringify(errorInfo));
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+    },
+    operationType,
+    path
   }
-  throw error;
-};
-
-// Test connection
-async function testConnection() {
-  try {
-    // Try to get a document from the configured database
-    await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log("Firebase connected successfully.");
-  } catch (error: any) {
-    if (error.message?.includes('the client is offline')) {
-      console.error("Firebase connection failed: The client is offline. This often means the Firebase project configuration is invalid or the project has been deleted.");
-      // Don't show the generic "Please check your Firebase configuration" if we want to be more specific
-    } else if (error.code === 'permission-denied') {
-       console.warn("Firebase connected, but permission was denied for the connection test. This is expected if 'test/connection' is not publicly readable.");
-    } else {
-      console.error("Firebase initialization error:", error.code, error.message);
-    }
-  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
 }
-testConnection();
+
+export const signIn = () => signInWithPopup(auth, googleProvider);
+export const signOut = () => auth.signOut();
+
+export { collection, query, orderBy, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp };
+

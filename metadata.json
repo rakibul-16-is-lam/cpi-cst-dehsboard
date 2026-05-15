@@ -1,6 +1,12 @@
 {
-  "name": "CST Student & Activity Dashboard",
-  "description": "A comprehensive dashboard for the Computer Science Technology (CST) department to track students, attendance, performance, and activities.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "name": "CPI CST Dashboard v2.0",
+  "description": "Advanced technical dashboard for CPI CST Department with Django-ready integration, Real-time Firebase CMS, and Developer Handover Portal.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

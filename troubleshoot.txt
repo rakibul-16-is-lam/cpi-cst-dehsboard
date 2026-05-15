@@ -1,0 +1,13 @@
+Troubleshooting ERR_CONNECTION_REFUSED (Local):
+
+1. For Tomcat:
+   - Check catalina.logs in the logs folder.
+   - Ensure JRE/JDK is installed.
+   - Visit http://localhost:8080 instead of 3000.
+
+2. For Node.js (VS Code):
+   - Make sure terminal shows "VITE vX.X.X ready".
+   - Check if another app is using the port.
+
+3. Export Tip:
+   - React app should be built with 'npm run build' before placing it in Tomcat's webapps/ROOT folder.
