@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 0. Default Deny
+    // 0. Default Deny Catch-all
     match /{document=**} {
       allow read, write: if false;
     }
@@ -38,39 +38,64 @@ service cloud.firestore {
     }
 
     function isValidNews(data) {
-      return data.keys().hasAll(['text', 'priority']) &&
-             data.text is string && data.text.size() <= 200 &&
-             data.priority is number;
+      return data.keys().hasAll(['text', 'createdAt']) &&
+             data.keys().size() == 2 &&
+             data.text is string && data.text.size() <= 1000 &&
+             data.createdAt == request.time;
     }
 
     function isValidProject(data) {
-      return data.keys().hasAll(['title', 'team', 'status']) &&
-             data.title is string && data.title.size() <= 100 &&
-             data.team is string && data.team.size() <= 100 &&
-             data.status in ['In Progress', 'Completed', 'Beta'];
+      return data.keys().hasAll(['title', 'createdAt']) &&
+             data.keys().size() == 2 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.createdAt == request.time;
     }
 
     function isValidLeaderboard(data) {
-      return data.keys().hasAll(['id', 'name', 'score', 'avatar']) &&
-             data.id is string && data.name is string &&
-             data.score is number && data.avatar is string;
-    }
-
-    function isValidDistribution(data) {
-      return data.keys().hasAll(['category', 'value']) &&
-             data.category is string && data.value is number;
+      return data.keys().hasAll(['name', 'batch', 'score', 'avatar', 'createdAt']) &&
+             data.keys().size() == 5 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.batch is string && data.batch.size() <= 100 &&
+             data.score is number && 
+             data.avatar is string && data.avatar.size() <= 20 &&
+             data.createdAt == request.time;
     }
 
     function isValidPlacement(data) {
-      return data.keys().hasAll(['company', 'student', 'logo']) &&
-             data.company is string && data.student is string && data.logo is string;
+      return data.keys().hasAll(['name', 'company', 'position', 'year', 'createdAt']) &&
+             data.keys().size() == 5 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.company is string && data.company.size() <= 100 &&
+             data.position is string && data.position.size() <= 100 &&
+             data.year is string && data.year.size() <= 50 &&
+             data.createdAt == request.time;
     }
 
     function isValidStats(data) {
       return data.keys().hasAll(['totalStudents', 'activeStudents', 'alumni', 'placementRate', 'performanceIndex']) &&
+             data.keys().size() == 5 &&
              data.totalStudents is number && data.activeStudents is number &&
              data.alumni is number && data.placementRate is number &&
              data.performanceIndex is number;
+    }
+
+    function isValidBroadcast(data) {
+      return data.keys().hasAll(['mediaType', 'videoSrc', 'imageSrc']) &&
+             data.keys().size() == 3 &&
+             data.mediaType in ['video', 'image'] &&
+             data.videoSrc is string && data.videoSrc.size() <= 1000 &&
+             data.imageSrc is string && data.imageSrc.size() <= 1000;
+    }
+
+    function isValidContact(data) {
+      return data.keys().hasAll(['headName', 'headPhone', 'headEmail', 'ciName', 'ciPhone', 'ciEmail']) &&
+             data.keys().size() == 6 &&
+             data.headName is string && data.headName.size() <= 100 &&
+             data.headPhone is string && data.headPhone.size() <= 50 &&
+             data.headEmail is string && data.headEmail.size() <= 100 &&
+             data.ciName is string && data.ciName.size() <= 100 &&
+             data.ciPhone is string && data.ciPhone.size() <= 50 &&
+             data.ciEmail is string && data.ciEmail.size() <= 100;
     }
 
     // --- Collection Matches ---
@@ -99,12 +124,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /distribution/{id} {
-      allow read: if true;
-      allow write: if isAdmin() && isValidDistribution(incoming()) && isValidId(id);
-      allow delete: if isAdmin();
-    }
-
     match /placements/{id} {
       allow read: if true;
       allow write: if isAdmin() && isValidPlacement(incoming()) && isValidId(id);
@@ -114,6 +133,16 @@ service cloud.firestore {
     match /settings/stats {
       allow read: if true;
       allow write: if isAdmin() && isValidStats(incoming());
+    }
+
+    match /settings/broadcast {
+      allow read: if true;
+      allow write: if isAdmin() && isValidBroadcast(incoming());
+    }
+
+    match /settings/contact {
+      allow read: if true;
+      allow write: if isAdmin() && isValidContact(incoming());
     }
 
   }

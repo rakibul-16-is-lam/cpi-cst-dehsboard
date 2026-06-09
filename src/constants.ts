@@ -43,10 +43,10 @@ export const DASHBOARD_DATA = {
     { name: '2024', count: 45 },
   ],
   studentDistribution: [
-    { name: '1st Year', value: 80, color: '#3b82f6' },
-    { name: '2nd Year', value: 70, color: '#10b981' },
-    { name: '3rd Year', value: 90, color: '#f59e0b' },
-    { name: '4th Year', value: 80, color: '#8b5cf6' },
+    { name: '1st Year', value: 80, color: '#41cbd9' },
+    { name: '2nd Year', value: 70, color: '#3d5e82' },
+    { name: '3rd Year', value: 90, color: '#fcbe4a' },
+    { name: '4th Year', value: 83, color: '#ff7360' },
   ],
   leaderboard: [
     { rank: 1, name: 'Sadia Islam', score: 3.98, id: 'CST-502', avatar: 'SI', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' },

@@ -16,8 +16,7 @@
       "description": "Ticker items for the top of the dashboard",
       "type": "object",
       "properties": {
-        "text": { "type": "string" },
-        "priority": { "type": "number" }
+        "text": { "type": "string" }
       },
       "required": ["text"]
     },
@@ -26,41 +25,57 @@
       "description": "Research and development projects",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
-        "team": { "type": "string" },
-        "status": { "type": "string", "enum": ["In Progress", "Completed", "Beta"] }
+        "title": { "type": "string" }
       },
-      "required": ["title", "team", "status"]
+      "required": ["title"]
     },
     "LeaderboardEntry": {
       "title": "Student Leaderboard Entry",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
         "name": { "type": "string" },
+        "batch": { "type": "string" },
         "score": { "type": "number" },
         "avatar": { "type": "string" }
       },
-      "required": ["id", "name", "score", "avatar"]
-    },
-    "Distribution": {
-      "title": "Student Distribution",
-      "type": "object",
-      "properties": {
-        "category": { "type": "string" },
-        "value": { "type": "number" }
-      },
-      "required": ["category", "value"]
+      "required": ["name", "batch", "score", "avatar"]
     },
     "Placement": {
       "title": "Alumni Placement",
+      "description": "Placement records showing success of students",
       "type": "object",
       "properties": {
+        "name": { "type": "string" },
         "company": { "type": "string" },
-        "student": { "type": "string" },
-        "logo": { "type": "string" }
+        "position": { "type": "string" },
+        "year": { "type": "string" }
       },
-      "required": ["company", "student", "logo"]
+      "required": ["name", "company", "position", "year"]
+    },
+    "BroadcastSettings": {
+      "title": "Broadcast Settings",
+      "description": "Defines the video source or image source and the current rendering choice",
+      "type": "object",
+      "properties": {
+        "mediaType": { "type": "string", "enum": ["video", "image"] },
+        "videoSrc": { "type": "string" },
+        "imageSrc": { "type": "string" }
+      },
+      "required": ["mediaType", "videoSrc", "imageSrc"]
+    },
+    "ContactSettings": {
+      "title": "Quick Contact Settings",
+      "description": "Admin editable contact details for head of department and chief instructor",
+      "type": "object",
+      "properties": {
+        "headName": { "type": "string" },
+        "headPhone": { "type": "string" },
+        "headEmail": { "type": "string" },
+        "ciName": { "type": "string" },
+        "ciPhone": { "type": "string" },
+        "ciEmail": { "type": "string" }
+      },
+      "required": ["headName", "headPhone", "headEmail", "ciName", "ciPhone", "ciEmail"]
     },
     "Stats": {
       "title": "Dashboard Stats",
@@ -81,8 +96,9 @@
     "/news/{id}": { "schema": "BreakingNews", "description": "Ticker text" },
     "/innovation/{id}": { "schema": "Project", "description": "Innovation Hub" },
     "/leaderboard/{id}": { "schema": "LeaderboardEntry", "description": "Top students" },
-    "/distribution/{id}": { "schema": "Distribution", "description": "Student split data" },
     "/placements/{id}": { "schema": "Placement", "description": "Alumni placements" },
-    "/settings/stats": { "schema": "Stats", "description": "Global counters" }
+    "/settings/stats": { "schema": "Stats", "description": "Global counters" },
+    "/settings/broadcast": { "schema": "BroadcastSettings", "description": "Broadcast options" },
+    "/settings/contact": { "schema": "ContactSettings", "description": "Quick contacts" }
   }
 }

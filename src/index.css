@@ -1,10 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Syncopate:wght@400;700&family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Outfit", sans-serif;
+  --font-wide: "Syncopate", sans-serif;
+  --font-syne: "Syne", sans-serif;
+  --font-bengali: "Li Ador Noirrit", "Plus Jakarta Sans", sans-serif;
   
   --color-bento-bg: var(--bento-bg);
   --color-bento-card: var(--bento-card);
@@ -39,6 +43,9 @@
   }
   html {
     font-size: 115%;
+  }
+  html[lang="bn"], [lang="bn"], .font-bengali {
+    font-family: var(--font-bengali), var(--font-sans);
   }
 }
 
